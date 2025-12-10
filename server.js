@@ -3,9 +3,27 @@ const multer = require('multer');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const app = express();
 const PORT = 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Get local IP address
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -106,6 +124,72 @@ app.post('/convert', upload.single('htmlFile'), async (req, res) => {
   }
 });
 
+// URL to PDF conversion endpoint
+app.post('/convert-url', async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid URL format' });
+    }
+
+    // Launch Puppeteer
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+
+    // Set a user agent to avoid being blocked
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+
+    try {
+      // Navigate to the URL
+      await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+    } catch (error) {
+      await browser.close();
+      return res.status(400).json({ error: `Failed to access URL: ${error.message}` });
+    }
+
+    // Generate PDF
+    const pdfFileName = `${Date.now()}-${Buffer.from(url).toString('base64').substring(0, 20)}.pdf`;
+    const pdfPath = path.join(pdfsDir, pdfFileName);
+
+    await page.pdf({
+      path: pdfPath,
+      format: 'A4',
+      margin: {
+        top: '20px',
+        right: '20px',
+        bottom: '20px',
+        left: '20px'
+      }
+    });
+
+    await browser.close();
+
+    res.json({
+      success: true,
+      message: 'PDF generated from URL successfully',
+      pdfFile: pdfFileName,
+      downloadLink: `/download/${pdfFileName}`,
+      sourceUrl: url
+    });
+
+  } catch (error) {
+    console.error('URL conversion error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Download PDF endpoint
 app.get('/download/:filename', (req, res) => {
   try {
@@ -144,7 +228,16 @@ app.get('/api/pdfs', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  const localIP = getLocalIP();
+  console.log('\n========================================');
+  console.log('  HTML to PDF Converter Server');
+  console.log('========================================');
+  console.log(`\n✅ Server is running!\n`);
+  console.log(`📱 Local Access:     http://localhost:${PORT}`);
+  console.log(`🌐 Network Access:   http://${localIP}:${PORT}`);
+  console.log(`\n📡 Share this URL with other devices on your WiFi:`);
+  console.log(`   http://${localIP}:${PORT}\n`);
   console.log('Ready to convert HTML files to PDF');
+  console.log('========================================\n');
 });

@@ -283,7 +283,86 @@
             padding: 20px;
         }
 
-        @media (max-width: 600px) {
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #999;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-btn:hover {
+            color: #764ba2;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .url-input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .url-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-convert-url {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-convert-url:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-convert-url:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
             .container {
                 padding: 20px;
             }
@@ -313,12 +392,20 @@
 <body>
     <div class="container">
         <h1>📄 HTML to PDF Converter</h1>
-        <p class="subtitle">Upload your HTML file and convert it to PDF instantly</p>
+        <p class="subtitle">Upload HTML files or convert websites to PDF</p>
 
-        <!-- Upload Section -->
-        <div class="upload-section" id="uploadSection">
-            <div class="upload-icon">📁</div>
-            <div class="upload-text">Click to upload or drag and drop</div>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="upload">📁 Upload File</button>
+            <button class="tab-btn" data-tab="url">🌐 Convert URL</button>
+        </div>
+
+        <!-- Upload Tab -->
+        <div class="tab-content active" id="upload-tab">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Click to upload or drag and drop</div>
             <div class="upload-subtext">HTML files only (*.html, *.htm)</div>
             <input type="file" id="fileInput" accept=".html,.htm" />
         </div>
@@ -343,6 +430,25 @@
 
         <!-- Status Message -->
         <div class="status-message" id="statusMessage"></div>
+        </div>
+
+        <!-- URL Tab -->
+        <div class="tab-content" id="url-tab">
+            <!-- URL Input Section -->
+            <div class="url-input-group">
+                <input type="text" id="urlInput" placeholder="Enter website URL (e.g., https://example.com)" />
+                <button class="btn-convert-url" id="convertUrlBtn">Convert URL</button>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading" id="loadingUrl">
+                <div class="spinner"></div>
+                <p>Converting website to PDF...</p>
+            </div>
+
+            <!-- Status Message for URL -->
+            <div class="status-message" id="statusMessageUrl"></div>
+        </div>
 
         <!-- Generated PDFs List -->
         <div class="pdf-list">
@@ -505,6 +611,90 @@
 
         // Refresh PDF list every 5 seconds
         setInterval(loadPDFList, 5000);
+
+        // Tab switching functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.getAttribute('data-tab');
+                
+                // Remove active class from all tabs
+                tabBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                btn.classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            });
+        });
+
+        // URL Conversion
+        const urlInput = document.getElementById('urlInput');
+        const convertUrlBtn = document.getElementById('convertUrlBtn');
+        const loadingUrl = document.getElementById('loadingUrl');
+        const statusMessageUrl = document.getElementById('statusMessageUrl');
+
+        convertUrlBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showStatusUrl('Please enter a URL', 'error');
+                return;
+            }
+
+            // Validate URL format
+            try {
+                new URL(url);
+            } catch (e) {
+                showStatusUrl('Please enter a valid URL (e.g., https://example.com)', 'error');
+                return;
+            }
+
+            loadingUrl.classList.add('show');
+            convertUrlBtn.disabled = true;
+            hideStatusUrl();
+
+            try {
+                const response = await fetch('/convert-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showStatusUrl('✅ Website converted to PDF successfully!', 'success');
+                    urlInput.value = '';
+                    loadPDFList();
+                } else {
+                    showStatusUrl('❌ ' + (data.error || 'Conversion failed'), 'error');
+                }
+            } catch (error) {
+                showStatusUrl('❌ ' + error.message, 'error');
+            } finally {
+                loadingUrl.classList.remove('show');
+                convertUrlBtn.disabled = false;
+            }
+        });
+
+        // Allow Enter key to trigger conversion
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                convertUrlBtn.click();
+            }
+        });
+
+        function showStatusUrl(message, type) {
+            statusMessageUrl.textContent = message;
+            statusMessageUrl.className = `status-message show ${type}`;
+        }
+
+        function hideStatusUrl() {
+            statusMessageUrl.classList.remove('show');
+        }
     </script>
 </body>
 </html>
