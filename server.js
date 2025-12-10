@@ -99,10 +99,10 @@ app.post('/convert', upload.single('htmlFile'), async (req, res) => {
       path: pdfPath,
       format: 'A4',
       margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
+        top: '0px',
+        right: '0px',
+        bottom: '0px',
+        left: '0px'
       }
     });
 
@@ -176,8 +176,8 @@ app.post('/convert-url', async (req, res) => {
           nav, header nav, .navbar, .menu, .advertisement, .ads, 
           .cookie-banner, .cookie-consent, .popup, .modal-backdrop,
           footer { page-break-inside: avoid; }
-          body { margin: 0; padding: 10px; }
-          @page { size: A4; margin: 20px; }
+          body { margin: 0; padding: 0; }
+          @page { size: A4; margin: 0px; }
         `;
         document.head.appendChild(style);
       });
@@ -197,10 +197,10 @@ app.post('/convert-url', async (req, res) => {
       printBackground: true,  // Important: Include background colors and images
       preferCSSPageSize: true,
       margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
+        top: '0px',
+        right: '0px',
+        bottom: '0px',
+        left: '0px'
       }
     });
 
@@ -251,9 +251,42 @@ app.get('/api/pdfs', (req, res) => {
       downloadLink: `/download/${file}`,
       createdAt: fs.statSync(path.join(pdfsDir, file)).mtime
     }));
+    
+    // Sort by creation time - newest first
+    pdfFiles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
     res.json({ files: pdfFiles });
   } catch (error) {
     console.error('Error listing PDFs:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete PDF endpoint
+app.delete('/delete/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filepath = path.join(pdfsDir, filename);
+
+    // Security check: prevent directory traversal
+    if (!path.resolve(filepath).startsWith(path.resolve(pdfsDir))) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Delete the file
+    fs.unlinkSync(filepath);
+
+    res.json({
+      success: true,
+      message: 'PDF deleted successfully',
+      deletedFile: filename
+    });
+  } catch (error) {
+    console.error('Delete error:', error);
     res.status(500).json({ error: error.message });
   }
 });
