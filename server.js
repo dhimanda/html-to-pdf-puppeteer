@@ -148,24 +148,54 @@ app.post('/convert-url', async (req, res) => {
 
     const page = await browser.newPage();
 
+    // Set viewport to ensure proper rendering
+    await page.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 1,
+    });
+
     // Set a user agent to avoid being blocked
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
     try {
-      // Navigate to the URL
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+      // Navigate to the URL with multiple wait conditions
+      await page.goto(url, { 
+        waitUntil: ['domcontentloaded', 'networkidle0'], 
+        timeout: 45000 
+      });
+
+      // Wait for images and stylesheets to load
+      await page.waitForTimeout(2000);
+
+      // Inject CSS to ensure proper rendering and remove elements that shouldn't be printed
+      await page.evaluate(() => {
+        // Hide elements that shouldn't be in PDF
+        const style = document.createElement('style');
+        style.innerHTML = `
+          nav, header nav, .navbar, .menu, .advertisement, .ads, 
+          .cookie-banner, .cookie-consent, .popup, .modal-backdrop,
+          footer { page-break-inside: avoid; }
+          body { margin: 0; padding: 10px; }
+          @page { size: A4; margin: 20px; }
+        `;
+        document.head.appendChild(style);
+      });
+
     } catch (error) {
       await browser.close();
       return res.status(400).json({ error: `Failed to access URL: ${error.message}` });
     }
 
-    // Generate PDF
+    // Generate PDF with better settings
     const pdfFileName = `${Date.now()}-${Buffer.from(url).toString('base64').substring(0, 20)}.pdf`;
     const pdfPath = path.join(pdfsDir, pdfFileName);
 
     await page.pdf({
       path: pdfPath,
       format: 'A4',
+      printBackground: true,  // Important: Include background colors and images
+      preferCSSPageSize: true,
       margin: {
         top: '20px',
         right: '20px',
