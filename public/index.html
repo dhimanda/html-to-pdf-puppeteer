@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML to PDF Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f0f8;
+        }
+
+        .upload-section.dragover {
+            border-color: #764ba2;
+            background: #e8e8f5;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 14px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-name {
+            color: #2e7d32;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #558b2f;
+            font-size: 13px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-convert {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-convert:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-convert:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-clear {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-clear:hover {
+            background: #efefef;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .status-message.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .download-btn {
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .pdf-list {
+            margin-top: 40px;
+            border-top: 2px solid #eee;
+            padding-top: 30px;
+        }
+
+        .pdf-list h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .pdf-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .pdf-item-name {
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .pdf-item-name strong {
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .pdf-item-date {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .pdf-item-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: 15px;
+        }
+
+        .pdf-item-actions a {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .pdf-item-actions a:hover {
+            background: #764ba2;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .pdf-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pdf-item-actions {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
+
+            .pdf-item-actions a {
+                flex: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 HTML to PDF Converter</h1>
+        <p class="subtitle">Upload your HTML file and convert it to PDF instantly</p>
+
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Click to upload or drag and drop</div>
+            <div class="upload-subtext">HTML files only (*.html, *.htm)</div>
+            <input type="file" id="fileInput" accept=".html,.htm" />
+        </div>
+
+        <!-- File Info -->
+        <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="button-group">
+            <button class="btn-convert" id="convertBtn" disabled>Convert to PDF</button>
+            <button class="btn-clear" id="clearBtn">Clear</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Converting your HTML file to PDF...</p>
+        </div>
+
+        <!-- Status Message -->
+        <div class="status-message" id="statusMessage"></div>
+
+        <!-- Generated PDFs List -->
+        <div class="pdf-list">
+            <h2>📋 Generated PDFs</h2>
+            <div id="pdfListContainer">
+                <p class="empty-message">No PDFs generated yet</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loading = document.getElementById('loading');
+        const statusMessage = document.getElementById('statusMessage');
+        const pdfListContainer = document.getElementById('pdfListContainer');
+
+        let selectedFile = null;
+
+        // Upload section click
+        uploadSection.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext !== 'html' && ext !== 'htm') {
+                showStatus('Only HTML files are allowed', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = '📄 ' + file.name;
+            fileSize.textContent = 'Size: ' + formatFileSize(file.size);
+            fileInfo.classList.add('show');
+            convertBtn.disabled = false;
+            hideStatus();
+        }
+
+        // Convert button
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('htmlFile', selectedFile);
+
+            loading.classList.add('show');
+            convertBtn.disabled = true;
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showStatus('✅ PDF generated successfully!', 'success');
+                    clearSelection();
+                    loadPDFList();
+                } else {
+                    showStatus('❌ ' + (data.error || 'Conversion failed'), 'error');
+                }
+            } catch (error) {
+                showStatus('❌ ' + error.message, 'error');
+            } finally {
+                loading.classList.remove('show');
+                convertBtn.disabled = !selectedFile;
+            }
+        });
+
+        // Clear button
+        clearBtn.addEventListener('click', clearSelection);
+
+        function clearSelection() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            convertBtn.disabled = true;
+            hideStatus();
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message show ${type}`;
+        }
+
+        function hideStatus() {
+            statusMessage.classList.remove('show');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Load PDF list
+        async function loadPDFList() {
+            try {
+                const response = await fetch('/api/pdfs');
+                const data = await response.json();
+
+                if (data.files.length === 0) {
+                    pdfListContainer.innerHTML = '<p class="empty-message">No PDFs generated yet</p>';
+                } else {
+                    pdfListContainer.innerHTML = data.files.map(file => `
+                        <div class="pdf-item">
+                            <div class="pdf-item-name">
+                                <strong>📄 ${file.name}</strong>
+                                <div class="pdf-item-date">${new Date(file.createdAt).toLocaleString()}</div>
+                            </div>
+                            <div class="pdf-item-actions">
+                                <a href="${file.downloadLink}" download>Download</a>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading PDFs:', error);
+            }
+        }
+
+        // Load PDF list on page load
+        loadPDFList();
+
+        // Refresh PDF list every 5 seconds
+        setInterval(loadPDFList, 5000);
+    </script>
+</body>
+</html>

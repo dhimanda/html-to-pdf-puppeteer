@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .subtitle {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-left: 4px solid #ffc107;
+            margin: 10px 0;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        footer {
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sample Document</h1>
+        <p class="subtitle">This is a sample HTML document for testing PDF conversion</p>
+    </header>
+
+    <div class="content">
+        <h2>Introduction</h2>
+        <div class="section">
+            <p>
+                This is a sample HTML document created to demonstrate the HTML to PDF conversion functionality.
+                The document contains various HTML elements including headings, paragraphs, lists, and styled sections.
+            </p>
+            <div class="highlight">
+                <strong>Note:</strong> This document will be converted to PDF format using Puppeteer.
+            </div>
+        </div>
+
+        <h2>Features</h2>
+        <div class="section">
+            <p>This sample document demonstrates the following features:</p>
+            <ul>
+                <li>Proper HTML structure and semantics</li>
+                <li>CSS styling including colors and layout</li>
+                <li>Various text formatting options</li>
+                <li>Responsive design considerations</li>
+                <li>Professional appearance suitable for PDF output</li>
+            </ul>
+        </div>
+
+        <h2>How to Use</h2>
+        <div class="section">
+            <p>Follow these steps to convert HTML files to PDF:</p>
+            <ol>
+                <li>Create or prepare your HTML file</li>
+                <li>Open the web application at <code>http://localhost:3000</code></li>
+                <li>Click the upload area and select your HTML file</li>
+                <li>Click the "Convert to PDF" button</li>
+                <li>Download the generated PDF from the list below the upload section</li>
+            </ol>
+        </div>
+
+        <h2>Tips for Best Results</h2>
+        <div class="section">
+            <ul>
+                <li>Use absolute URLs for external resources (images, fonts)</li>
+                <li>Test your HTML in a browser before converting to PDF</li>
+                <li>Ensure CSS is embedded in the HTML file or properly linked</li>
+                <li>Avoid JavaScript-dependent content for best PDF results</li>
+                <li>Use page breaks with CSS (e.g., <code>page-break-after: always;</code>)</li>
+            </ul>
+        </div>
+
+        <h2>Sample Content</h2>
+        <div class="section">
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </p>
+            <p>
+                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 HTML to PDF Converter | Generated on <span id="date"></span></p>
+    </footer>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString();
+    </script>
+</body>
+</html>
